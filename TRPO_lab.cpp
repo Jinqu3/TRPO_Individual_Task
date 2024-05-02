@@ -1,6 +1,7 @@
 ﻿#include <iostream>
 #include<iomanip>
 #include<cmath>
+#include <fstream>
 using namespace std;
 
 //Вариант 2 (10 баллов).Используя паттерн Strategy запрограммируйте следующую
@@ -20,7 +21,7 @@ class Fill;
 
 class Fill {
 public:
-    virtual void FillArray(int* array, int size) = 0;
+    virtual void FillArray(int* array, string file_name) = 0;
 };
 
 
@@ -28,24 +29,36 @@ public:
 ///Стратегия заполнения с начала
 class FillDefault : public Fill {
 public:
-    virtual void FillArray(int* array, int size) {
+    virtual void FillArray(int* array,string file_name) {
         cout << "Заполняем массив с начала\n";
-        for (int i = 1; i <= size; i++) {
-            cout << "Введи " << i << " элемент массива: ";
-            cin >> array[i - 1];
+        ifstream in(file_name);
+        if (in.is_open()) {
+            int size;
+            in >> size;
+            for (int i = 0; i < size; i++) {
+                in >> array[i];
+            }
         }
+        else cout << "Файл не открыт";
+        in.close();
     }
 };
 
 ///Стратегия заполнения с конца
 class FillBackwards : public Fill {
 public:
-    virtual void FillArray(int* array, int size) {
+    virtual void FillArray(int* array,string file_name) {
         cout << "Заполняем массив с конца\n";
-        for (int i = size; i > 0; i--) {
-            cout << "Введи " << i << " элемент массива: ";
-            cin >> array[i - 1];
+        ifstream in(file_name);
+        if (in.is_open()) {
+            int size;
+            in >> size;
+            for (int i = size; i > 0; i--) {
+                in >> array[i - 1];
+            }
         }
+        else cout << "Файл не открыт";
+        in.close();
     }
 };
 
@@ -60,11 +73,15 @@ public:
     FillRandom() {
         this->randMax = 20;
     }
-    virtual void FillArray(int* array, int size) {
+    virtual void FillArray(int* array,string file_name) {
         cout << "Заполняем массив рандомно\n";
+        ifstream in(file_name);
+        int size;
+        in >> size;
         for (int i = 0; i < size; i++) {
             array[i] = rand() % this->randMax + 1;
         }
+        in.close();
     }
 };
 
@@ -73,18 +90,24 @@ class Array {
 private:
     int *array;
     int size;
+    string file_name;
 public:
     Fill*p;/// указатель на стратегию
 
-    Array(int size) {
-        this->array = new int[size];
-        this->size = size;
+    Array(string file_name) {
+        ifstream in(file_name);
+        in >> this->size;
+        this->array = new int[this->size];
+        this->file_name = file_name;
         this->p = new FillDefault();
+        in.close();
     }
 
-    Array(int size, Fill* p) {
-        this->array = new int[size];
-        this->size = size;
+    Array(Fill* p, string file_name) {
+        ifstream in(file_name);
+        in >> this->size;
+        this->array = new int[this->size];
+        this->file_name = file_name;
         this->p = p;
     }
 
@@ -92,14 +115,14 @@ public:
         for (int i = 0; i < size; i++) {
             cout << array[i] << " ";
         }
-        cout << endl << endl;
+        cout << endl;
     }
 
     void setStrategy(Fill* p) {
         this->p = p;
     }
     void FillArray() {
-        p->FillArray(array, size);
+        p->FillArray(array,file_name);
     }
 };
 
@@ -107,23 +130,35 @@ public:
 int main()
 {
     setlocale(LC_ALL, "Russian");
+
+    std::ifstream in;      
+    std::ifstream in2;
+
+    string file_name1 = "array1.txt";
+    string file_name2 = "array2.txt";
     int size1, size2;
-    cout << "Введите размер 1 массива: ";
-    cin >> size1;
-    cout << "Введите размер 2 массива: ";
-    cin >> size2;
+
+    in.open(file_name1);
+    in2.open(file_name2);
+
+    in >> size1;
+    in2 >> size2;
+
+    in.close();
+    in2.close();
 
     Fill* s1 = new FillRandom(100);
-    Array n1(size1,s1);
-    Array n2(size2);
+    Fill* s2 = new FillBackwards();
+    Fill* s3 = new FillRandom();
+
+    Array n1(s1,file_name1);
+    Array n2(file_name2);
 
     n1.FillArray();
     n1.print();
-    n2.FillArray(); 
+    n2.FillArray();
     n2.print();
 
-    Fill * s2 = new FillBackwards();
-    Fill * s3 = new FillRandom();
     n1.setStrategy(s2); ///замена cтратегий
     n2.setStrategy(s3);
 
@@ -133,5 +168,7 @@ int main()
     n2.print();
 
 
+    
+   
     return 0;
 }
